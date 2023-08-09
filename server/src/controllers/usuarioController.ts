@@ -4,31 +4,20 @@ import { Usuario } from '../db/schemas/usuario';
 import { v4 as uuidV4 } from 'uuid';
 import bcrypt from 'bcrypt';
 import Boom from '@hapi/boom';
-import {Repository} from 'typeorm';
+import { investigarCorreo } from '../utilities/buscarCorreo';
+import { generarJWT, verificarJWT } from '../utilities/generarJSONToken';
 
-async function  investigarCorreo(email: string, repositorio: Repository<Usuario>): Promise<Comprobar> {
-    try {
-        const dato = await repositorio.find({
-            where: {
-                email
-            }
-        });
-        return {existe:dato.length > 0, cuenta:dato};
-    } catch (error) {
-        return {existe:false, cuenta:[]};
-    }
 
-}
 
 export class ControllerUsuario {
-     
+
     async agregarUsuario(req: Request, res: Response, next: NextFunction) {
         try {
             const repositorio = AppDataSource.getRepository(Usuario);
             const nuevoUsuario = req.body as UsuarioReq;
             const checar = await investigarCorreo(nuevoUsuario.email, repositorio);
-            if(checar.existe){
-               throw 'Correo ya existente';
+            if (checar.existe) {
+                throw 'Correo ya existente';
             }
             const id_usuario = uuidV4();
             const contra = await bcrypt.hash(nuevoUsuario.contra, 7);
@@ -41,9 +30,9 @@ export class ControllerUsuario {
             await repositorio.manager.save(agregar);
             res.status(201).json({ message: 'Se agregó elemento con éxtito' });
         } catch (error) {
-            if(typeof error === 'string'){
+            if (typeof error === 'string') {
                 next(Boom.unauthorized(error));
-            }else{
+            } else {
                 next(Boom.badRequest('Problemas al agregar usuario'));
             }
         }
@@ -53,28 +42,73 @@ export class ControllerUsuario {
         const repositorio = AppDataSource.getRepository(Usuario);
         try {
             const checar = await investigarCorreo(solicitud.email, repositorio);
-            if(!checar.existe){
-                throw 'No se encontró usuario con ese correo' ;
+            if (!checar.existe) {
+                throw 'No se encontró usuario con ese correo';
             }
             const usuarioExistente = checar.cuenta[0];
             const verificarContra = await bcrypt.compare(solicitud.contra, usuarioExistente.contra);
-            if(!verificarContra){
+            if (!verificarContra) {
                 throw 'Usuario o contraseña incorrectos';
             }
-            res.json({message:"si pasas"});
+            const nuevoEncriptado = await bcrypt.hash(solicitud.contra, 7);
+            usuarioExistente.contra = nuevoEncriptado;
+            await repositorio.manager.save(usuarioExistente);
+            const token = generarJWT(usuarioExistente);
+
+            const response: InicioRes = {
+                permiso: true,
+                token,
+                message: '',
+                nombre: usuarioExistente.nombre,
+                superUsuario: usuarioExistente.superUsuario
+            }
+
+            res.json(response);
+
         } catch (error) {
-            if(typeof error === 'string'){
-                const errorSecion:ErrorSe = {
-                    errorSecion:true,
-                    mensaje:error
+            if (typeof error === 'string') {
+                const errorSesion: ErrorSe = {
+                    errorSecion: true,
+                    mensaje: error
                 }
-                next(errorSecion);
-            }else{
+                next(errorSesion);
+            } else {
                 next(Boom.badRequest('Problemas con iniciar sesion'));
             }
         }
     }
 
+    async inicioToken(req: Request, res: Response, next: NextFunction) {
+        try {
+            const cuerpo = req.body as { token: string };
+            const usuarioExistente = await verificarJWT(cuerpo.token);
+            const repositorio = AppDataSource.getRepository(Usuario);
+            const checar = await investigarCorreo(usuarioExistente.email, repositorio);
+            if (!checar.existe) {
+                throw 'No se puede iniciar sesion'
+            }
+            const response: InicioRes = {
+                permiso: true,
+                token: cuerpo.token,
+                message: '',
+                nombre: usuarioExistente.nombre,
+                superUsuario: usuarioExistente.superUsuario
+            }
+
+            res.json(response);
+        } catch (error) {
+            if (typeof error === 'string') {
+                const errorSesion: ErrorSe = {
+                    errorSecion: true,
+                    mensaje: error
+                }
+                next(errorSesion);
+            } else {
+                next(Boom.badRequest('Problemas con iniciar sesion'));
+            }
+        }
+    }
+    
 }
 
 export type UsuarioReq = {
@@ -87,11 +121,22 @@ export type inicioReq = {
     email: string;
     contra: string;
 }
-type Comprobar={
-    existe:boolean,
-    cuenta:Usuario[]
-}
+
 type ErrorSe = {
-    errorSecion:boolean,
-    mensaje:string
+    errorSecion: boolean,
+    mensaje: string
+}
+export type UsuarioRes = {
+    id_usuario: string,
+    nombre: string;
+    email: string;
+    contra: string;
+    superUsuario: boolean;
+}
+type InicioRes = {
+    permiso: boolean,
+    token: string,
+    message: string,
+    nombre: string,
+    superUsuario: boolean
 }

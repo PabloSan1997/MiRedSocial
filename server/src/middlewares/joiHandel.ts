@@ -5,7 +5,8 @@ import boom from '@hapi/boom';
 
 type Schema =
     joi.ObjectSchema<UsuarioReq> |
-    joi.ObjectSchema<inicioReq>
+    joi.ObjectSchema<inicioReq> |
+    joi.ObjectSchema<{token:string}>
 
 
 export function joiHandle(schema: Schema) {

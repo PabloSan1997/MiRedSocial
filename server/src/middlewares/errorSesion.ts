@@ -7,7 +7,8 @@ export function errorSesion( error:Error,req:Request, res:Response, next:NextFun
             permiso:false,
             token:'',
             message:error.mensaje,
-            nombre:''
+            nombre:'',
+            superUsuario:false
         }
         res.status(401).json(pasar);
     }

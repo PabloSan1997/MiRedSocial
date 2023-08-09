@@ -7,6 +7,7 @@ import { UsuarioReq, inicioReq } from '../controllers/usuarioController';
  const contra = joi.string().min(1);
  const superUsuario = joi.boolean();
  const id_usuario = joi.string().min(2);
+ const token = joi.string().min(1);
 
  export const agregarUsuarioJoi: joi.ObjectSchema<UsuarioReq> = joi.object(
     {
@@ -21,5 +22,11 @@ import { UsuarioReq, inicioReq } from '../controllers/usuarioController';
     {
         email:email.required(),
         contra:contra.required(),
+    }
+ );
+
+ export const inicioTokenJoi: joi.ObjectSchema<{token:string}> = joi.object(
+    {
+        token:token.required()
     }
  );
