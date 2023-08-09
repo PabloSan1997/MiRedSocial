@@ -1,5 +1,7 @@
 import {DataSource} from 'typeorm';
 import { URL_DATABASE } from '../config/variables';
+import { Usuario } from './schemas/usuario';
+import { Texto } from './schemas/textos';
 
 
 export const AppDataSource = new DataSource({
@@ -7,7 +9,7 @@ export const AppDataSource = new DataSource({
     url:URL_DATABASE,
     synchronize: true,
     logging: true,
-    entities:[]
+    entities:[Usuario, Texto]
 });
 
 export function conectar(){

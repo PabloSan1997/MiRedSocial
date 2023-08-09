@@ -2,7 +2,7 @@ import "reflect-metadata";
 import express from 'express';
 import 'dotenv/config';
 import cors from 'cors';
-import { AppDataSource, conectar } from "./db/config";
+import { conectar } from "./db/config";
 import { generateApi } from "./routes";
 
 conectar();
