@@ -6,6 +6,7 @@ import { conectar } from "./db/config";
 import { generateApi } from "./routes";
 import { boomHandle } from "./middlewares/boomHandle";
 import { headerValidation } from "./middlewares/headerValidation";
+import { errorSesion } from "./middlewares/errorSesion";
 
 conectar();
 const app = express();
@@ -17,6 +18,6 @@ app.use(headerValidation);
 generateApi(app);
 
 app.use(boomHandle);
-
+app.use(errorSesion);
 
 app.listen(3000);
