@@ -20,6 +20,6 @@ export class Usuario{
     superUsuario:boolean;
 
     @OneToMany(()=>Texto, (texto) => texto.usuario)
-    photos:Texto[]
+    textos:Texto[]
 
 }

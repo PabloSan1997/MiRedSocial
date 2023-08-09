@@ -33,7 +33,7 @@ export class ControllerUsuario {
             if (typeof error === 'string') {
                 next(Boom.unauthorized(error));
             } else {
-                next(Boom.badRequest('Problemas al agregar usuario'));
+                next(Boom.badImplementation('Problemas al agregar usuario'));
             }
         }
     }
@@ -60,7 +60,8 @@ export class ControllerUsuario {
                 token,
                 message: '',
                 nombre: usuarioExistente.nombre,
-                superUsuario: usuarioExistente.superUsuario
+                superUsuario: usuarioExistente.superUsuario,
+                id_usuario:usuarioExistente.id_usuario
             }
 
             res.json(response);
@@ -92,7 +93,8 @@ export class ControllerUsuario {
                 token: cuerpo.token,
                 message: '',
                 nombre: usuarioExistente.nombre,
-                superUsuario: usuarioExistente.superUsuario
+                superUsuario: usuarioExistente.superUsuario,
+                id_usuario:usuarioExistente.id_usuario
             }
 
             res.json(response);
@@ -104,12 +106,12 @@ export class ControllerUsuario {
                 }
                 next(errorSesion);
             } else {
-                next(Boom.badRequest('Problemas con iniciar sesion'));
+                next(Boom.badImplementation('Problemas con iniciar sesion'));
             }
         }
     }
-    
 }
+
 
 export type UsuarioReq = {
     nombre: string;
@@ -138,5 +140,6 @@ type InicioRes = {
     token: string,
     message: string,
     nombre: string,
-    superUsuario: boolean
+    superUsuario: boolean,
+    id_usuario:string
 }
