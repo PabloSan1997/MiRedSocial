@@ -8,6 +8,7 @@ import { boomHandle } from "./middlewares/boomHandle";
 import { headerValidation } from "./middlewares/headerValidation";
 import { errorSesion } from "./middlewares/errorSesion";
 
+const PORT = process.env.PORT || 3000;
 conectar();
 const app = express();
 
@@ -20,4 +21,4 @@ generateApi(app);
 app.use(boomHandle);
 app.use(errorSesion);
 
-app.listen(3000);
+app.listen(PORT);
