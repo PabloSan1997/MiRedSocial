@@ -2,11 +2,11 @@ import { UsuarioReq, inicioReq } from '../controllers/usuarioController';
 import { Response, Request, NextFunction } from 'express';
 import joi from 'joi';
 import boom from '@hapi/boom';
+import { SolicitudEditar, Solicitudes } from '../controllers/textosController';
 
-type Schema =
-    joi.ObjectSchema<UsuarioReq> |
-    joi.ObjectSchema<inicioReq> |
-    joi.ObjectSchema<{token:string}>
+type Tipeos = UsuarioReq | inicioReq | {token:string} | SolicitudEditar | Solicitudes;
+
+type Schema = joi.ObjectSchema<Tipeos>;
 
 
 export function joiHandle(schema: Schema) {
