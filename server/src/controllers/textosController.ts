@@ -7,14 +7,14 @@ import { verificarJWT } from '../utilities/generarJSONToken';
 import { v4 as uuidV4 } from 'uuid';
 import { generarFecha } from '../utilities/generarFecha';
 import { filtrarUsuario } from '../utilities/filtrarUsuario';
-import { investigarCorreo } from '../utilities/buscarCorreo';
+import { procesoSolicitud } from '../utilities/prosesoSolicitud';
 
 
 export class TextosController {
     async leerTextos(req: Request, res: Response, next: NextFunction) {
         const repositorio = AppDataSource.getRepository(Texto);
         try {
-            const datos = await repositorio.find({ relations: { usuario: true }});
+            const datos = await repositorio.find({ relations: { usuario: true } });
             const respuesta = datos.map(elemento => filtrarUsuario(elemento));
             res.json(respuesta.reverse());
         } catch (error) {
@@ -22,17 +22,17 @@ export class TextosController {
         }
     }
 
-    async leerTextoId(req: Request, res: Response, next: NextFunction){
+    async leerTextoId(req: Request, res: Response, next: NextFunction) {
         try {
             const repositorio = AppDataSource.getRepository(Texto);
-            const {id_texto} = req.params as {id_texto:string};
+            const { id_texto } = req.params as { id_texto: string };
             const elementos = await repositorio.find({
-                relations:{usuario:true},
-                where:{
+                relations: { usuario: true },
+                where: {
                     id_texto
                 }
             });
-            if(elementos.length===0){
+            if (elementos.length === 0) {
                 throw 'No se encontró texto';
             }
             const respuesta = filtrarUsuario(elementos[0]);
@@ -110,32 +110,15 @@ export class TextosController {
             }
         }
     }
-    
-    async editarTexto(req: Request, res: Response, next: NextFunction){
+
+    async editarTexto(req: Request, res: Response, next: NextFunction) {
         try {
             const solicitud = req.body as SolicitudEditar;
-        const repositorio = AppDataSource.getRepository(Texto);
-        const repositurioUsuario = AppDataSource.getRepository(Usuario);
-        const usuarioReq = await verificarJWT(solicitud.token);;
-        const checar = await investigarCorreo(usuarioReq.email, repositurioUsuario);
-        if(!checar.existe){
-            throw 'No tiene permiso para generar esta accion';
-        }
-        const textos = await repositorio.find({
-            relations:{usuario:true},
-            where:{
-                id_texto:solicitud.id_texto
-            }
-        });
-        if(textos.length==0){
-            throw 'No se encontró texto'
-        }
-        const texto = textos[0];
-        if(!checar.cuenta[0].superUsuario && texto.usuario.email!==checar.cuenta[0].email){
-            throw 'No tienes permiso para generar esta acción';
-        }
-        await repositorio.update({id_texto:solicitud.id_texto}, {mensaje:solicitud.mensaje});
-        res.json({message:"Se edito texto con exito", texto:solicitud.mensaje});
+            const repositorio = AppDataSource.getRepository(Texto);
+            const repositurioUsuario = AppDataSource.getRepository(Usuario);
+            const respuesta = await procesoSolicitud(solicitud.token, repositurioUsuario, repositorio, solicitud.id_texto);
+            await repositorio.update({ id_texto: respuesta.id_texto }, { mensaje: solicitud.mensaje });
+            res.json({ message: "Se edito texto con exito", texto: solicitud.mensaje });
         } catch (error) {
             if (typeof error === 'string') {
                 next(boom.unauthorized(error));
@@ -145,36 +128,15 @@ export class TextosController {
             }
         }
     }
-    async eliminarTexto(req: Request, res: Response, next: NextFunction){
+    async eliminarTexto(req: Request, res: Response, next: NextFunction) {
         try {
-            const {token} = req.headers as {token:string};
-        const {id_texto} = req.params as {id_texto:string};
-        const repositorio = AppDataSource.getRepository(Texto);
-        const usuarioRepositorio = AppDataSource.getRepository(Usuario);
-        if(!token){
-            throw 'No tienes permiso para esta acción';
-        }
-        const usuarioReq = await verificarJWT(token);
-        const textos = await repositorio.find({
-            relations:{usuario:true},
-            where:{
-                id_texto
-            }
-        });
-        if(textos.length===0){
-            throw 'No se encontró elemento';
-        }
-        const checar = await investigarCorreo(usuarioReq.email, usuarioRepositorio);
-        if(!checar.existe){
-            throw 'No tienes permiso para esta accion';
-        }
-        const usuario = checar.cuenta[0];
-        const texto = textos[0];
-        if(!usuario.superUsuario && usuario.email!==texto.usuario.email){
-            throw 'No tienes permiso para esta accion';
-        }
-        await repositorio.delete({id_texto});
-        res.json({message:"Elemento eliminado con exito"});
+            const { token } = req.headers as { token: string };
+            const { id_texto } = req.params as { id_texto: string };
+            const repositorio = AppDataSource.getRepository(Texto);
+            const usuarioRepositorio = AppDataSource.getRepository(Usuario);
+            const respuesta = await procesoSolicitud(token, usuarioRepositorio, repositorio, id_texto);
+            await repositorio.delete({ id_texto:respuesta.id_texto });
+            res.json({ message: "Elemento eliminado con exito" });
         } catch (error) {
             if (typeof error === 'string') {
                 next(boom.notFound(error));
@@ -190,8 +152,8 @@ export type Solicitudes = {
     token: string,
     mensaje: string
 }
-export type SolicitudEditar={
-    token:string,
-    mensaje:string,
-    id_texto:string
+export type SolicitudEditar = {
+    token: string,
+    mensaje: string,
+    id_texto: string
 }
